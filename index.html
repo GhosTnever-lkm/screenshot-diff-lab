@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131b">
+  <meta name="description" content="Compare game screenshots locally with overlay, pixel difference heatmap, and exportable change metrics.">
+  <title>Screenshot Diff Lab — compare images locally</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Screenshot Diff Lab home"><span class="brand-mark">Δ</span><span>Screenshot <b>Diff Lab</b></span></a>
+    <span class="local-badge"><span></span> Runs in this browser</span>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">VISUAL QA · GAMES · MODS</p>
+      <h1>See what actually changed.</h1>
+      <p class="hero-copy">Compare two screenshots side by side, blend them, or highlight changed pixels. Files stay on this device.</p>
+    </section>
+
+    <section class="workspace" aria-labelledby="inputs-heading">
+      <div class="section-title"><div><p class="eyebrow">01 / INPUT</p><h2 id="inputs-heading">Choose screenshots</h2></div><button id="sample-button" class="quiet-button" type="button">Load sample pair</button></div>
+      <div class="upload-grid">
+        <label class="upload-card" for="baseline-input">
+          <span class="upload-icon">A</span><span class="upload-label">Baseline</span><span id="baseline-name" class="file-name">Choose a PNG, JPEG, WebP, or BMP</span>
+          <input id="baseline-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp">
+        </label>
+        <label class="upload-card" for="current-input">
+          <span class="upload-icon current-icon">B</span><span class="upload-label">Current</span><span id="current-name" class="file-name">Choose a PNG, JPEG, WebP, or BMP</span>
+          <input id="current-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp">
+        </label>
+      </div>
+      <div id="dimension-warning" class="notice hidden" role="status"></div>
+    </section>
+
+    <section class="workspace" aria-labelledby="compare-heading">
+      <div class="section-title"><div><p class="eyebrow">02 / REVIEW</p><h2 id="compare-heading">Compare</h2></div><span id="image-size" class="meta-pill">Waiting for images</span></div>
+      <div class="toolbar">
+        <fieldset class="mode-picker"><legend class="sr-only">Comparison view</legend>
+          <label><input type="radio" name="view-mode" value="side" checked><span>Side by side</span></label>
+          <label><input type="radio" name="view-mode" value="overlay"><span>Overlay</span></label>
+          <label><input type="radio" name="view-mode" value="diff"><span>Difference</span></label>
+        </fieldset>
+        <label class="range-control" id="opacity-control">Overlay <input id="opacity-input" type="range" min="0" max="100" value="50"><output id="opacity-output">50%</output></label>
+        <label class="range-control">Ignore changes ≤ <input id="threshold-input" type="range" min="0" max="128" value="24"><output id="threshold-output">24</output></label>
+      </div>
+      <div id="resize-row" class="resize-row hidden"><label for="resize-mode">Image sizes differ. Choose a comparison size:</label><select id="resize-mode"><option value="" selected disabled>Choose a resize mode…</option><option value="baseline">Resize current to baseline dimensions</option><option value="current">Resize baseline to current dimensions</option></select></div>
+      <div id="viewer" class="viewer empty" aria-live="polite"><div class="empty-state"><span class="empty-symbol">◎</span><strong>Add two images to start</strong><span>Nothing is uploaded. The comparison is calculated locally.</span></div></div>
+    </section>
+
+    <section class="workspace results" aria-labelledby="results-heading">
+      <div class="section-title"><div><p class="eyebrow">03 / MEASURE</p><h2 id="results-heading">Difference summary</h2></div><span class="meta-pill">Thresholded RGBA pixel comparison</span></div>
+      <div class="stats-grid">
+        <article class="stat-card"><span>Changed pixels</span><strong id="changed-pixels">—</strong><small id="changed-percent">—</small></article>
+        <article class="stat-card"><span>Mean absolute error</span><strong id="mean-error">—</strong><small>0–255 across RGBA channels</small></article>
+        <article class="stat-card"><span>Changed bounds</span><strong id="changed-bounds">—</strong><small>Rectangle in comparison coordinates</small></article>
+      </div>
+      <div class="export-row"><button id="export-png" class="primary-button" type="button" disabled>Download difference PNG</button><button id="export-json" class="secondary-button" type="button" disabled>Export JSON</button><button id="export-md" class="secondary-button" type="button" disabled>Export Markdown</button><span id="status" class="status" role="status">Select two images.</span></div>
+    </section>
+
+    <section class="how-it-works"><p class="eyebrow">HOW TO READ IT</p><p>The heatmap marks pixels whose largest RGBA channel difference is above the selected threshold. The changed-area percentage counts marked pixels divided by the full comparison canvas. It is a visual signal, not an automatic verdict; resolution scaling can affect the result.</p></section>
+  </main>
+
+  <footer><span>Screenshot Diff Lab · <a href="https://github.com/GhosTnever-lkm">GhosTnever</a></span><span>Local-first · No tracking · No external libraries</span></footer>
+</body>
+</html>

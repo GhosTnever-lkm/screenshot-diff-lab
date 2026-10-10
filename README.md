@@ -14,7 +14,7 @@ python -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-The hosted version is also available at <https://ghostnever-lkm.github.io/screenshot-diff-lab/>.
+A hosted demo will be linked here after GitHub Pages deployment is enabled.
 
 ## Compare screenshots
 

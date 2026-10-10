@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 — 2026-10-10
+
+- Publish the live GitHub Pages demo and include the static deployment workflow.
+- Correct the hosted demo link in the README.
+
 ## 0.1.0 — 2026-10-10
 
 - First release of the offline screenshot comparison app.

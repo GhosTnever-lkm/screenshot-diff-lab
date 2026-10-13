@@ -1,4 +1,5 @@
 import { compareRgba } from "./diff-core.js";
+import { createLatestImageLoader } from "./image-load.js";
 
 const byId = (id) => document.getElementById(id);
 const baselineInput = byId("baseline-input");
@@ -14,13 +15,9 @@ function setStatus(message, kind = "") {
   node.className = `status ${kind}`.trim();
 }
 
-function loadImage(file, side) {
-  if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    setStatus("Choose a supported image file.", "error");
-    return;
-  }
-  createImageBitmap(file).then((bitmap) => {
+const imageLoader = createLatestImageLoader(
+  (file) => createImageBitmap(file),
+  (bitmap, file, side) => {
     if (bitmap.width * bitmap.height > 10_000_000) {
       bitmap.close?.();
       setStatus(`${file.name} is larger than the 10-megapixel input limit. Resize a copy and try again.`, "error");
@@ -30,11 +27,30 @@ function loadImage(file, side) {
     state[side] = { bitmap, fileName: file.name, width: bitmap.width, height: bitmap.height };
     byId(`${side}-name`).textContent = `${file.name} · ${bitmap.width} × ${bitmap.height}`;
     render();
-  }).catch(() => setStatus(`Could not decode ${file.name}. Try PNG, JPEG, WebP, or BMP.`, "error"));
+  },
+  (file) => setStatus(`Could not decode ${file.name}. Try PNG, JPEG, WebP, or BMP.`, "error"),
+);
+
+function loadImage(file, side) {
+  if (!file) return;
+  if (file.type && !file.type.startsWith("image/")) {
+    imageLoader.invalidate(side);
+    setStatus("Choose a supported image file.", "error");
+    return;
+  }
+  imageLoader.load(file, side);
 }
 
-baselineInput.addEventListener("change", () => loadImage(baselineInput.files[0], "baseline"));
-currentInput.addEventListener("change", () => loadImage(currentInput.files[0], "current"));
+baselineInput.addEventListener("change", () => {
+  const [file] = baselineInput.files;
+  baselineInput.value = "";
+  loadImage(file, "baseline");
+});
+currentInput.addEventListener("change", () => {
+  const [file] = currentInput.files;
+  currentInput.value = "";
+  loadImage(file, "current");
+});
 thresholdInput.addEventListener("input", () => {
   byId("threshold-output").value = thresholdInput.value;
   render();
@@ -215,7 +231,9 @@ byId("export-md").addEventListener("click", () => {
   downloadBlob(new Blob([markdown], { type: "text/markdown" }), "screenshot-diff-report.md");
 });
 
-byId("sample-button").addEventListener("click", () => {
+byId("sample-button").addEventListener("click", async () => {
+  const baselineRevision = imageLoader.invalidate("baseline");
+  const currentRevision = imageLoader.invalidate("current");
   const makeSample = (variant) => {
     const canvas = document.createElement("canvas");
     canvas.width = 480;
@@ -242,13 +260,28 @@ byId("sample-button").addEventListener("click", () => {
     context.fillText(variant ? "BUILD 02 · POST TWEAK" : "BUILD 01 · BASELINE", 28, 38);
     return createImageBitmap(canvas);
   };
-  Promise.all([makeSample(false), makeSample(true)]).then(([baseline, current]) => {
-    state.baseline = { bitmap: baseline, fileName: "sample-baseline.png", width: 480, height: 280 };
-    state.current = { bitmap: current, fileName: "sample-current.png", width: 480, height: 280 };
-    byId("baseline-name").textContent = "Built-in sample · 480 × 280";
-    byId("current-name").textContent = "Built-in sample · 480 × 280";
-    baselineInput.value = "";
-    currentInput.value = "";
-    render();
-  });
+  const [baselineResult, currentResult] = await Promise.allSettled([makeSample(false), makeSample(true)]);
+  const sampleIsCurrent = imageLoader.isCurrent("baseline", baselineRevision)
+    && imageLoader.isCurrent("current", currentRevision);
+  if (baselineResult.status === "rejected" || currentResult.status === "rejected") {
+    if (baselineResult.status === "fulfilled") baselineResult.value.close?.();
+    if (currentResult.status === "fulfilled") currentResult.value.close?.();
+    if (sampleIsCurrent) setStatus("Could not generate the sample screenshots. Try loading two image files instead.", "error");
+    return;
+  }
+  const [baseline, current] = [baselineResult.value, currentResult.value];
+  if (!sampleIsCurrent) {
+    baseline.close?.();
+    current.close?.();
+    return;
+  }
+  state.baseline?.bitmap?.close?.();
+  state.current?.bitmap?.close?.();
+  state.baseline = { bitmap: baseline, fileName: "sample-baseline.png", width: 480, height: 280 };
+  state.current = { bitmap: current, fileName: "sample-current.png", width: 480, height: 280 };
+  byId("baseline-name").textContent = "Built-in sample · 480 × 280";
+  byId("current-name").textContent = "Built-in sample · 480 × 280";
+  baselineInput.value = "";
+  currentInput.value = "";
+  render();
 });

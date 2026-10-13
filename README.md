@@ -18,7 +18,7 @@ Open the live demo: <https://ghostnever-lkm.github.io/screenshot-diff-lab/>.
 
 ## Compare screenshots
 
-1. Load a baseline and a current image, or choose **Load sample pair** to try the interface.
+1. Load a baseline and a current image, or choose **Load sample pair** to try the interface. You can pick the same file again; if you change a selection while it is decoding, the latest choice wins.
 2. If the dimensions differ, select which image should be stretched to the other image's dimensions. Resizing can affect pixel metrics.
 3. Switch between side-by-side, overlay, and difference views.
 4. Adjust the threshold. A pixel is marked changed when its largest absolute RGBA channel difference is greater than that threshold.
@@ -38,7 +38,7 @@ No package install is needed for tests; Node.js 20+ can run:
 npm test
 ```
 
-`diff-core.js` is the pure pixel comparison module. `app.js` handles image decoding, canvas rendering, user controls, and exports. GitHub Actions deploys the static app to Pages and creates a ZIP release with a SHA-256 sidecar.
+`diff-core.js` is the pure pixel comparison module. `image-load.js` prevents slow, outdated image decodes from replacing a newer selection and releases unused bitmaps. `app.js` handles canvas rendering, user controls, and exports. GitHub Actions deploys the static app to Pages and creates a ZIP release with a SHA-256 sidecar.
 
 ```mermaid
 flowchart LR
